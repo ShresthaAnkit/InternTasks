@@ -13,16 +13,16 @@ def main():
     
     search_query = st.text_input("Enter your search query")
 
-    if st.button("Search"):
+    if search_query:
         prompt = hf.process_query(search_query,st.session_state.df)
 
     if prompt:
         response_placeholder = st.empty()  # Create a placeholder for streaming response
         full_response = ""
         # Stream the response to the user
-        for chunk in hf.generate_response(prompt):
+        for chunk in hf.generate_response_cohere(prompt):
             full_response += chunk
-            response_placeholder.text(full_response)
+            response_placeholder.markdown(full_response)
     # Reset file processing state if the user wants to upload another file
     if st.sidebar.button('Reset PDF'):
         if 'df' in st.session_state:
