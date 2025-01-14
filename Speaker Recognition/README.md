@@ -1,0 +1,1 @@
+<img src="similarity_heatmap.png" alt='Speaker Recognition Heatmap'>
