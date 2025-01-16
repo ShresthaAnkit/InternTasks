@@ -1,2 +1,4 @@
-.pdf
-cleaned_chunks.txt
+whisper.cpp/
+*.wav
+*.m4a
+audio_intern/
