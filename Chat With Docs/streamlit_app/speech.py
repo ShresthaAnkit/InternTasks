@@ -6,11 +6,18 @@ import scipy.io.wavfile as wav
 import pyaudio
 import wave
 import threading
+import pyttsx3
 
 output_file = r"D:\Programming\AI\Basics\intern-assignments\Chat With Docs\streamlit_app\temp_files\output.wav"
 model_path = r"D:\Programming\AI\Basics\intern-assignments\Chat With Docs\whisper.cpp\models\ggml-tiny.en-q5_0.bin"  # Path to the Whisper model
 whisper_cli = r"D:\Programming\AI\Basics\intern-assignments\Chat With Docs\whisper.cpp\build\bin\Release\whisper-cli.exe" # Full path to the whisper-cli executable
-
+output_file_audio = r"D:\Programming\AI\Basics\intern-assignments\Chat With Docs\streamlit_app\temp_files\output_audio.wav"
+def text_to_audio(text):
+    engine = pyttsx3.init()
+    engine.save_to_file(text, output_file_audio)
+    engine.runAndWait()
+    print(f"Audio saved as {output_file_audio}")
+    return output_file_audio
 
 def text_to_speech(input_file):
     print(input_file)

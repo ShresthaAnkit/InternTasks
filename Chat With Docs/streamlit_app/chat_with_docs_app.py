@@ -11,6 +11,7 @@ def main():
     st.session_state.setdefault('df', None)
     st.session_state.setdefault('recording', 0)
     st.session_state.setdefault('query','')
+    st.session_state.setdefault('audio_file','')
     prompt = None    
     st.title('Chat with Docs')
 
@@ -41,7 +42,9 @@ def main():
                 st.session_state.query = text_to_speech(file_path)               
                 if st.session_state.query:     
                     prompt = hf.process_query(st.session_state.query,st.session_state.df)    
+                    
     st.write(st.session_state.query)      
+    
     if st.session_state.query:                 
         prompt = hf.process_query(st.session_state.query,st.session_state.df)       
 
@@ -52,7 +55,9 @@ def main():
         for chunk in hf.generate_response(prompt):
             full_response += chunk
             response_placeholder.markdown(full_response)        
-    
+        st.session_state.audio_file = text_to_audio(full_response)
+    if st.session_state.audio_file:
+        st.audio(st.session_state.audio_file)
 
 
 if __name__=='__main__':
