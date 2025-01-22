@@ -1,0 +1,54 @@
+{
+    "date": "2023-10-17",
+    "branch": null,
+    "account_type": "Saving Account (बचत खाता)",
+    "product_name": null,
+    "currency": "NPR (नेपाली रुपैयाँ)",
+    "salutation": null,
+    "full_name": "Rakhi Mahato",
+    "date_of_birth_bs": "2052-02-25",
+    "date_of_birth_ad": "1995-06-08",
+    "gender": "Female (महिला)",
+    "marital_status": "Unmarried (अविवाहित)",
+    "nationality": "Nepalese",
+    "resident": null,
+    "education": "Literate (साक्षर)",
+    "existing_account": "No (छैन)",
+    "account_no": null,
+    "identification_details": [
+        {
+            "legal_id": "National identity card",
+            "number_type": "17-02-75-00277",
+            "issuing_office": null,
+            "date_of_issue": "2075-02-16",
+            "expiry_date": null,
+            "primary_secondary": "Primary"
+        }
+    ],
+    "related_parties": [
+        {
+            "relation": "Mother (आमा)",
+            "full_name": "Sila Devi Mahato Koiri",
+            "id_type": null,
+            "id_no": null,
+            "have_account": "NO",
+            "customer_no": null
+        },
+        {
+            "relation": "Father (बुवा)",
+            "full_name": "Bhubneshwar Prasad Koiri",
+            "id_type": null,
+            "id_no": null,
+            "have_account": "NO",
+            "customer_no": null
+        },
+        {
+            "relation": "Grandfather (बाजे)",
+            "full_name": "Satya Narayan Mahato",
+            "id_type": null,
+            "id_no": null,
+            "have_account": "NO",
+            "customer_no": null
+        }
+    ]
+}
