@@ -173,3 +173,8 @@ cython_debug/
 *.jpg
 *.jpeg
 *.png
+
+# Media
+*.mp4
+*.wav
+*.mp3
