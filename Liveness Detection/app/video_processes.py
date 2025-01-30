@@ -75,8 +75,8 @@ def mouth_aspect_ratio(mouth_landmarks):
     return mar
 def extract_video_features(video_path):    
     mp_face_mesh = mp.solutions.face_mesh
-    face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, refine_landmarks=True)
-    cap = cv2.VideoCapture(video_path)
+    face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, refine_landmarks=True)    
+    cap = cv2.VideoCapture(video_path)    
     # Get video frame rate using OpenCV    
     fps = cap.get(cv2.CAP_PROP_FPS)  # Frames per second    
 

@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.stats import spearmanr
-import warnings
 from scipy.signal import find_peaks
 from audio_processes import get_audio_energy
 from video_processes import extract_video_features
@@ -57,8 +56,9 @@ def detect_liveness(video_path):
     heuristics are used to filter out fake videos with low audio energy and few
     blinks.
     """
-
+    
     lip_feat,blink_count,speak_count,fps = extract_video_features(video_path)
+    
     audio_energy = get_audio_energy(video_path,fps)
     mean_dist = np.mean(lip_feat,axis=1)
     min_len = min(len(mean_dist),len(audio_energy))
