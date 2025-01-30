@@ -35,9 +35,9 @@ MOUTH_INDICES = [185,37,267,409,314,84]
 
 path = r'D:\Programming\Python\AI\Basics\AMNIL Tech\Liveness Detection\lip_movement\video\real\real1.mp4'
 # Initialize video capture
-cam = cv2.VideoCapture(path)
+cam = cv2.VideoCapture(0)
 rotation = get_rotation(path)
-#rotation=0
+rotation=0
 print('Rotation:',rotation)
 # Initialize the plot
 plt.ion()  # Turn on interactive mode
