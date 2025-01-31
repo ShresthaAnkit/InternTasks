@@ -45,12 +45,12 @@ fig, ax = plt.subplots()
 THRESHOLD = 1.25
 threshold_line = ax.axhline(y=THRESHOLD, color='r', linestyle='--', label="Threshold")
 x_data, y_data = [], []  # Lists to store frame numbers and EAR values
-line, = ax.plot(x_data, y_data, 'b-',label="Lips Movement sum")  # Create an empty line plot
+line, = ax.plot(x_data, y_data, 'b-',label="Mouth Aspect Ratio (MAR)")  # Create an empty line plot
 #threshold_line = ax.axhline(y=EAR_THRESHOLD, color='r', linestyle='--', label="Threshold")
 #ax.set_ylim(0, 0.7)  # Set y-axis limits (EAR typically ranges between 0 and 0.5)
 ax.set_xlabel("Frame Number")
-ax.set_ylabel("Lips Movement")
-ax.set_title("Lips Movement Over Time")
+ax.set_ylabel("Mouth Aspect Ratio (MAR)")
+ax.set_title("Mouth Aspect Ratio Over Time")
 ax.legend()
 speak_count = 0
 MOUTH_OPEN = 0
