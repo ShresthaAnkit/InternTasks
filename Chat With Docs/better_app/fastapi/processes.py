@@ -5,7 +5,10 @@ from llm_calls import generate_embeddings, generate_query_embeddings, generate_p
 from database import Database
 db = Database()
 
-def ingest_files(id,name,model,description,file_paths):    
+def add_knowledgebase(kb_id,KB_NAME,model,description):
+    db.create_kb(kb_id,KB_NAME,model,description)
+
+def ingest_files(id,model,file_paths):    
     text_blob = ''
     print("Getting file text...")
     for file_path in file_paths:        
@@ -16,8 +19,11 @@ def ingest_files(id,name,model,description,file_paths):
     print("Embeddings chunks...")
     embedded_chunks,embedding_tokens = generate_embeddings(chunks)
     print("Inserting into Database...")
-    db.insert_chunks(id,chunks, embedded_chunks,embedding_tokens,name,model,description)
+    db.insert_chunks(id,chunks, embedded_chunks,embedding_tokens,model)
     print("Completed Ingesetion")
+
+def get_kb_from_id(kb_id):
+    return db.get_kb_from_id(kb_id)
 
 def check_if_kb_already_exist(KB_NAME):
     return db.check_already_exist(KB_NAME)

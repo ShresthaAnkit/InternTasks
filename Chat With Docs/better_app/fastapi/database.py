@@ -17,23 +17,28 @@ class Database():
         if "PCA" not in self.db.table_names():
             self.db.create_table("PCA", schema=PCA)
 
-    def insert_chunks(self,kb_id,chunks, embedded_chunks,embedding_tokens,KB_NAME,model,description):
+    def create_kb(self,kb_id,KB_NAME,model,description):
         kb_table = self.db.open_table('KnowledgeBase')
-        kb_table.create_fts_index("name", use_tantivy=False,replace=True)        
-        # Create a new knowledge base
+        # Create a new knowledge base        
         kb_table.add([KnowledgeBase(
             kb_id=kb_id,
             name=KB_NAME,
             description=description,
             model=model,
+            status = "Pending",
             created_at=datetime.datetime.now().isoformat()
         )])
+    def insert_chunks(self,kb_id,chunks, embedded_chunks,embedding_tokens,model):
+        kb_table = self.db.open_table('KnowledgeBase')
+        kb_table.create_fts_index("name", use_tantivy=False,replace=True)  
+          
+        
         chunk_table = self.db.open_table('Chunk')
         # Save each chunk and its vector into LanceDB
         for chunk, embedding,tokens in zip(chunks, embedded_chunks,embedding_tokens):
             #padded_vector = np.pad(embedding, (0, 1536 - len(embedding)), 'constant', constant_values=0)
             chunk_table.add([Chunk(chunk_id=str(uuid.uuid4()),kb_id=kb_id,text=chunk, vector=embedding,embedding_tokens=tokens)])
-        return f"Knowledge base '{KB_NAME}' created successfully."
+        kb_table.update(where=f"kb_id = '{kb_id}'",values={'status': 'Completed'})            
     
     def check_already_exist(self,KB_NAME):
         kb_table = self.db.open_table('KnowledgeBase')
@@ -108,6 +113,13 @@ class Database():
     def get_conversation_ids(self):
         table = self.db.open_table("Conversation")        
         return table.to_pandas()
+
+    def get_kb_from_id(self,kb_id):
+        table = self.db.open_table("KnowledgeBase")
+        table.create_fts_index("kb_id", use_tantivy=False,replace=True)
+        kb_df = table.search(kb_id,vector_column_name='kb_id').select(["kb_id","name","description","model","status","created_at"]).to_pandas()       
+        kb_df.drop(columns=['_score'],inplace=True)         
+        return kb_df
 
     def get_conversation_from_id(self,conversation_id):        
         table = self.db.open_table("Conversation")

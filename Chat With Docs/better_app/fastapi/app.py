@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile,BackgroundTasks
 from fastapi.responses import JSONResponse
 import uuid
 from database import Database
-from processes import ingest_files,chat_with_kb,check_if_kb_already_exist,get_conversation_ids,get_conversation_from_id,perform_pca
+from processes import ingest_files,chat_with_kb,check_if_kb_already_exist,get_conversation_ids,get_conversation_from_id,perform_pca,add_knowledgebase,get_kb_from_id
 from file_processor import save_uploaded_file_to_disk
 import json
 import numpy as np
@@ -18,17 +18,25 @@ async def ingest_route(name: str, model: str, description: str,background_tasks:
     try:                
         if check_if_kb_already_exist(name): 
             return JSONResponse(content={"error": "Knowledge base already exists."}, status_code=400)
+        if not file_list:
+            return JSONResponse(content={"error": "No files uploaded."}, status_code=400)
         file_paths = []
         for file in file_list:
             file_paths.append(save_uploaded_file_to_disk(file))
         process_id = str(uuid.uuid4())
+        add_knowledgebase(process_id,name,model,description)
         print("Adding Background task.")
-        background_tasks.add_task(ingest_files,process_id,name,model,description,file_paths)                            
+        background_tasks.add_task(ingest_files,process_id,model,file_paths)                            
         return JSONResponse(content={"response": f"Successfully added for ingestion with id: {process_id}"}, status_code=200)
     
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
     
+@app.get('/get_kb_status')
+def get_kb_status_route(kb_id):
+    df = get_kb_from_id(kb_id)
+    json_data = df.to_json(orient='records')
+    return JSONResponse(content=json_data, status_code=200)
 @app.get("/get_new_conversation_id")
 def get_new_conversation_id_route():
     return JSONResponse(content={"conversation_id": str(uuid.uuid4())}, status_code=200)

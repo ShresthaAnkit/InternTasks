@@ -10,13 +10,14 @@ class KnowledgeBase(LanceModel):
     name: str  # Knowledge base name
     description: str  # Optional description
     model: str  # Embedding model used        
+    status: str
     created_at: str
 
 class Chunk(LanceModel):
     chunk_id: str  # Unique chunk ID
     kb_id: str  # Foreign key to `KnowledgeBase`    
     text: str  # Chunked text
-    vector: Vector(1536)  # Embedding vector
+    vector: Vector(1536)  # type: ignore # Embedding vector
     embedding_tokens: int
 
 class Conversation(LanceModel):

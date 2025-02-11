@@ -2,3 +2,4 @@ whisper.cpp/
 *.wav
 *.m4a
 audio_intern/
+mydb/
