@@ -36,7 +36,7 @@ async def ingest_route(name: str, model: str, description: str,background_tasks:
 def get_kb_status_route(kb_id):
     df = get_kb_from_id(kb_id)
     json_data = df.to_json(orient='records')
-    return JSONResponse(content=json_data, status_code=200)
+    return JSONResponse(content=json.loads(json_data)[0], status_code=200)
 @app.get("/get_new_conversation_id")
 def get_new_conversation_id_route():
     return JSONResponse(content={"conversation_id": str(uuid.uuid4())}, status_code=200)

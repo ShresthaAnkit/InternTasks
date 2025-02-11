@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+from itertools import chain
 from file_processor import get_file_text, save_uploaded_file_to_disk
 from llm_calls import generate_embeddings, generate_query_embeddings, generate_prompt, generate_response,get_chunks,generate_context,perform_pca_call
 from database import Database
@@ -83,9 +84,16 @@ def chat_with_kb(conversation_id,KB_NAME,query,model="gpt-4o-mini"):
     return response_text
 
 def perform_pca(conversation_id):
-    history = get_conversation_df(conversation_id)['text'].tolist()
+    conversation_df = get_conversation_df(conversation_id)
+    print("Getting history")
+    history = conversation_df['text'].tolist()
+    print("Getting chunk ids")
+    chunk_id_list = list(conversation_df['chunk_id'])
+    unique_chunk_ids = list(set(list(chain(*chunk_id_list))))
+    print("Getting chunks")
+    chunks = db.get_chunks_from_id(unique_chunk_ids)
     print("Performing pca call")
-    response = perform_pca_call(history)
+    response = perform_pca_call(history,chunks)
     response_text = response.choices[0].message.content  
     prompt_tokens = response.usage.prompt_tokens
     completition_tokens = response.usage.completion_tokens

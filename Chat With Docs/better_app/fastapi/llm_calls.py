@@ -86,11 +86,11 @@ def generate_response(prompt,message_history,model="gpt-4o-mini"):
     )
     return response
 
-def perform_pca_call(history):
+def perform_pca_call(history,chunks):
     PCA_PROMPT = """
         You are a friendly assistant that performs analysis on conversation history. Based on the user's conversation history, generate the following information:
         1. Sentiment score: A score from 0 to 10 where 0 means negative and 10 means positive. Provide a brief feedback to justify the score.
-        2. Context gaps: A list of gaps in the context of the conversation that might affect the quality of the generated response. Identify any missing context from the conversation history that could improve the response.
+        2. Context gaps: A list of gaps in the context of the conversation that might affect the quality of the generated response. Identify any missing context from the conversation history that could improve the response using the knowledge base provided below.
         3. Tags: A list of topics that are being discussed in the conversation. Include keywords or important subjects that should be tagged.
 
         Please use the conversation history provided below to generate these three pieces of information:
@@ -98,17 +98,24 @@ def perform_pca_call(history):
         - Context gaps (if any)
         - Tags (list of relevant topics)
 
-        The conversation history will be provided as a chat between the user and the assistant.
+        The conversation history and knowledge base will be provided as a chat between the user and the assistant.
 
-        Here is the conversation history:
+        Here is the knowledge base:
     """
     message_history = create_history_message(history)
+
+    kb = '\n'.join(chunks) + "\n Here is the conversation history:"
+
     response = client.beta.chat.completions.parse(
         model="gpt-4o-mini",
         messages=[
             {
                 "role":"system",
                 "content":PCA_PROMPT
+            },
+            {
+                "role":"user",
+                "content":kb
             },
             *message_history
         ],

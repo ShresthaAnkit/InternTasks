@@ -127,9 +127,23 @@ class Database():
         conversation_df = table.search(conversation_id,vector_column_name='conversation_id').select(["conversation_id","kb_id","chunk_id","sender","text","embedding_tokens","prompt_tokens","completition_tokens","timestamp"]).to_pandas()       
         conversation_df.drop(columns=['_score'],inplace=True)         
         return conversation_df
-    
+    def get_chunks_from_id(self,chunk_ids):        
+        table = self.db.open_table("Chunk")
+        table.create_fts_index("chunk_id", use_tantivy=False,replace=True)
+        chunks_text = []
+        for chunk_id in chunk_ids:
+            chunks_text.append(table.search(chunk_id,vector_column_name='chunk_id').select(['text']).to_list()[0]['text'])        
+        return chunks_text
+    def delete_pca(self,conversation_id):
+        table = self.db.open_table("PCA")
+        table.delete(f"conversation_id = '{conversation_id}'")
+
     def insert_pca(self,conversation_id,pca_response,prompt_tokens,completition_tokens):
         table = self.db.open_table("PCA")
+        table.create_fts_index("conversation_id", use_tantivy=False,replace=True)
+        existing_pca = table.search(conversation_id,vector_column_name='conversation_id').select(["conversation_id"]).to_list()       
+        if existing_pca:
+            self.delete_pca(conversation_id)
         table.add([PCA(conversation_id=conversation_id,
                        sentiment_score=pca_response['sentiment_score'],
                        sentiment_feedback=pca_response['sentiment_feedback'],
