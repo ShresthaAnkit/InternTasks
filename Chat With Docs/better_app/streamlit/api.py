@@ -30,3 +30,11 @@ def get_conversation_id():
 def chat(queryModel: QueryModel):        
     response = requests.get(f"{URL}/chat",params=queryModel.to_json())
     return response.json()['response']
+
+def get_all_conversations_with_kb_name():
+    response = requests.get(f"{URL}/get_all_conversations_with_kb_name")
+    return response.json()
+
+def get_full_conversation(conversation_id):
+    response = requests.get(f"{URL}/get_full_conversation",params={"conversation_id": conversation_id})
+    return response

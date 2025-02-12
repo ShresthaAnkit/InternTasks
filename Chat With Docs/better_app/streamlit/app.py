@@ -7,49 +7,11 @@ import numpy as np
 import pandas as pd
 from api import *
 
-@st.dialog("Conversation")
+@st.dialog("Conversation",width='large')
 def open_conversation(conversation_id):
     st.code(f"Conversation ID: {conversation_id}")
     reason = st.text_input("Because...")
     
-
-
-conversation_data = {
-    'conv_id_1': {
-        'kb_name': 'Knowledge Base 1',
-        'pca_result': [[0.2, 0.1], [0.4, 0.2], [0.3, 0.4]]
-    },
-    'conv_id_2': {
-        'kb_name': 'Knowledge Base 2',
-        'pca_result': [[0.1, 0.3], [0.5, 0.1], [0.3, 0.2]]
-    },
-    'conv_id_3': {
-        'kb_name': 'Knowledge Base 3',
-        'pca_result': [[0.4, 0.5], [0.2, 0.1], [0.3, 0.4]]
-    },'conv_id_4': {
-        'kb_name': 'Knowledge Base 3',
-        'pca_result': [[0.4, 0.5], [0.2, 0.1], [0.3, 0.4]]
-    },'conv_id_5': {
-        'kb_name': 'Knowledge Base 3',
-        'pca_result': [[0.4, 0.5], [0.2, 0.1], [0.3, 0.4]]
-    },'conv_id_6': {
-        'kb_name': 'Knowledge Base 3',
-        'pca_result': [[0.4, 0.5], [0.2, 0.1], [0.3, 0.4]]
-    },'conv_id_7': {
-        'kb_name': 'Knowledge Base 3',
-        'pca_result': [[0.4, 0.5], [0.2, 0.1], [0.3, 0.4]]
-    },'conv_id_8': {
-        'kb_name': 'Knowledge Base 3',
-        'pca_result': [[0.4, 0.5], [0.2, 0.1], [0.3, 0.4]]
-    },'conv_id_9': {
-        'kb_name': 'Knowledge Base 3',
-        'pca_result': [[0.4, 0.5], [0.2, 0.1], [0.3, 0.4]]
-    },'conv_id_10': {
-        'kb_name': 'Knowledge Base 3',
-        'pca_result': [[0.4, 0.5], [0.2, 0.1], [0.3, 0.4]]
-    },
-}
-
 if 'embedding_model' not in st.session_state:
     st.session_state['embedding_model'] = ''
 if 'completion_model' not in st.session_state:
@@ -182,30 +144,27 @@ elif selected == "Query Page":
 elif selected == "PCA Page":
     st.title("PCA Analysis")
     # Add content to the modal
-
+    conversations_list = get_all_conversations_with_kb_name()
+    
+    header_object = {"conversation_id":"Conversation ID","kb_name":"Knowledge Base Name"}
    # Create a DataFrame from the stored results
-    results_list = []
-    for conv_id, result in conversation_data.items():
-        results_list.append({
-            'Conversation ID': conv_id,
-            'Knowledge Base Name': result['kb_name'],
-            'PCA Result': result['pca_result']
-        })
-
-    # Create DataFrame
-    results_df = pd.DataFrame(results_list)
-
+    conversations_list.insert(0,header_object)
+    print(conversations_list)
     # Display the DataFrame with "Perform PCA" buttons beside each row
-    for i, row in results_df.iterrows():
+    for idx,conversation in enumerate(conversations_list):
         col1, col2, col3 = st.columns([2, 2, 1])  # Create columns for each row
         with col1:
-            st.write(row['Conversation ID'])
+            st.write(conversation['conversation_id'])
         with col2:
-            st.write(row['Knowledge Base Name'])
+            st.write(conversation['kb_name'])
         with col3:
-            if st.button(f"Perform PCA",key=f"Button {row['Conversation ID']}"):
-
-                open_conversation("Hello")
+            if not idx == 0:
+                if conversation['pca_done'] == 0:                    
+                    if st.button(f"Perform PCA",key=f"Button {conversation['conversation_id']}"):
+                        open_conversation(conversation_id=conversation['conversation_id'])
+                else:
+                    if st.button(f"View PCA",key=f"Button {conversation['conversation_id']}"):
+                        open_conversation(conversation_id=conversation['conversation_id'])
 
 
 
