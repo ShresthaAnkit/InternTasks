@@ -3,3 +3,4 @@ whisper.cpp/
 *.m4a
 audio_intern/
 mydb/
+test.py
