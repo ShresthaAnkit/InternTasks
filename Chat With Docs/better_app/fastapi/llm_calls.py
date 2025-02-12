@@ -40,7 +40,9 @@ def get_chunks(text,chunk_size=1000):
 
 def generate_context(embedded_query,chunk_df):
     chunk_df['similarity'] = chunk_df.apply(lambda x: calculate_similarity(embedded_query,x.iloc[3]),axis=1)    
-    df_top = chunk_df[chunk_df['similarity'] > chunk_df['similarity'].quantile(0.8)]      
+    print(chunk_df)
+    df_top = chunk_df.sort_values('similarity',ascending=False).head(3)    
+    print(df_top)
     context = ''
     for txt in df_top['text']:
         context+=txt
@@ -64,13 +66,12 @@ def create_history_message(message_history):
 
 def generate_response(prompt,message_history,model="gpt-4o-mini"):
     premable = """
-    You are a friendly bot. Don\'t ask for extra context. Read the "QUESTION:" and reply. 
-    If the question demands some information, 
-    answer the question provided as "QUESTION:"
-    using the context provided as "CONTEXT:" 
+    You are a friendly bot. Don\'t ask for extra context.
+    Answer the question provided as "QUESTION:"\n
+    Using the context provided as "CONTEXT:"\n
     If the answer is not present, say you don\'t know.
     The history maybe be provided as a chat between the user and the assistant.
-    If history is provided, take reference from it to answer the question but don't provide facts based on that history.
+    If history is provided, take reference from it to answer the question.
     """   
 
     messages = [{'role':'system','content':premable}]

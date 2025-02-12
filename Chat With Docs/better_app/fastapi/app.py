@@ -2,8 +2,7 @@ from fastapi import FastAPI, File, UploadFile,BackgroundTasks
 from fastapi.responses import JSONResponse
 import uuid
 from database import Database
-from processes import ingest_files,chat_with_kb,check_if_kb_already_exist,get_conversation_ids,get_conversation_from_id,perform_pca,add_knowledgebase,get_kb_from_id
-from file_processor import save_uploaded_file_to_disk
+from processes import *
 import json
 import numpy as np
 app = FastAPI(
@@ -32,6 +31,15 @@ async def ingest_route(name: str, model: str, description: str,background_tasks:
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
     
+@app.get('/get_all_kbs')
+def get_all_kbs_route():
+    try:
+        df = get_all_kbs()
+        json_data = df.to_json(orient='records')
+        return JSONResponse(content=json.loads(json_data), status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
 @app.get('/get_kb_status')
 def get_kb_status_route(kb_id):
     df = get_kb_from_id(kb_id)
@@ -42,9 +50,9 @@ def get_new_conversation_id_route():
     return JSONResponse(content={"conversation_id": str(uuid.uuid4())}, status_code=200)
 
 @app.get("/chat")
-def chat_route(conversation_id:str, name:str,model:str,question:str):
+def chat_route(conversation_id:str, kb_id:str,model:str,question:str):        
     try:                
-        response = chat_with_kb(conversation_id,name,question,model=model)        
+        response = chat_with_kb(conversation_id,kb_id,question,model=model)              
         return JSONResponse(content={"response": response}, status_code=200)
     
     except Exception as e:
@@ -81,4 +89,11 @@ def pca_route(conversation_id: str):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="127.0.0.1", port=8000)
+
+def get_all_conversations():
+    try:
+        conversations = get_conversations()
+        return JSONResponse(content={'response':conversations}, status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
 

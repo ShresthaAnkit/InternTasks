@@ -44,8 +44,9 @@ def get_conversation_df(conversation_id):
     conversation_df = conversation_df.sort_values(by='timestamp',ascending=True)    
     return conversation_df
 
-def chat_with_kb(conversation_id,KB_NAME,query,model="gpt-4o-mini"):
-    chunk_df = db.retrieve_KB(KB_NAME)
+def chat_with_kb(conversation_id,kb_id,query,model="gpt-4o-mini"):
+    chunk_df = db.retrieve_KB(kb_id)
+    
     if chunk_df is None:
         return 'No Knowledge base found.'
     chunk_df.drop(columns=['_score'],inplace=True)
@@ -101,3 +102,6 @@ def perform_pca(conversation_id):
     db.insert_pca(conversation_id,json.loads(response_text),prompt_tokens,completition_tokens)
     print("Inserted")
     return response_text
+
+def get_all_kbs():
+    return db.get_all_kbs()

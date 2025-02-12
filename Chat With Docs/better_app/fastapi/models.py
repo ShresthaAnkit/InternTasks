@@ -26,10 +26,16 @@ class Conversation(LanceModel):
     chunk_id: List[str]  # List of chunk IDs,
     sender: str # User or system
     text: str  # Conversation text
+    pca_done: int = 0
     embedding_tokens: int
     prompt_tokens: int
     completition_tokens: int
     timestamp: str
+
+class Messages(LanceModel):
+    conversation_id: str  # Conversation ID of a particular conversation    
+    sender: str # User or system
+    text: str  # Conversation text
 class PCA(LanceModel):
     conversation_id: str
     sentiment_score: int

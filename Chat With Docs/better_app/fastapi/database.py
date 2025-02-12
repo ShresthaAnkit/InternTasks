@@ -66,8 +66,7 @@ class Database():
             return None
         
     # Retrieve the knowledge base given the KB_NAME
-    def retrieve_KB(self,KB_NAME):    
-        kb_id = self.get_kb_id(KB_NAME)
+    def retrieve_KB(self,kb_id):            
         if kb_id is None:
             return None
         kb_table = self.db.open_table("Chunk")
@@ -151,3 +150,10 @@ class Database():
                        tags=pca_response['tags'],
                        prompt_tokens=prompt_tokens,
                        completition_tokens=completition_tokens)])
+        c_table = self.db.open_table('Conversation')
+        c_table.create_fts_index("conversation_id", use_tantivy=False,replace=True)  
+        c_table.update(where=f"conversation_id = '{conversation_id}'",values={'pca_done': 1})         
+        
+    def get_all_kbs(self):
+        table = self.db.open_table("KnowledgeBase")
+        return table.to_pandas()
