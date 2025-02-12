@@ -37,4 +37,4 @@ def get_all_conversations_with_kb_name():
 
 def get_full_conversation(conversation_id):
     response = requests.get(f"{URL}/get_full_conversation",params={"conversation_id": conversation_id})
-    return response
+    return response.json()

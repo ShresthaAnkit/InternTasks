@@ -9,8 +9,14 @@ from api import *
 
 @st.dialog("Conversation",width='large')
 def open_conversation(conversation_id):
+    conversation = get_full_conversation(conversation_id)
     st.code(f"Conversation ID: {conversation_id}")
-    reason = st.text_input("Because...")
+        # Display chat messages from history on app rerun
+    print(conversation)
+    for message in conversation:
+        
+        with st.chat_message(message["sender"]):            
+            st.markdown(message["text"])
     
 if 'embedding_model' not in st.session_state:
     st.session_state['embedding_model'] = ''
@@ -27,18 +33,7 @@ if 'conversation_id' not in st.session_state:
 # Initialize chat history
 if "chat_messages" not in st.session_state:
     st.session_state['chat_messages'] = []
-# Streamed response emulator
-def response_generator():
-    response = random.choice(
-        [
-            "Hello there! How can I assist you today?",
-            "Hi, human! Is there anything I can help you with?",
-            "Do you need help?",
-        ]
-    )
-    for word in response.split():
-        yield word + " "
-        time.sleep(0.05)
+
 # Define navigation
 st.set_page_config(page_title="My Streamlit App", layout="wide")
 
@@ -146,25 +141,29 @@ elif selected == "PCA Page":
     # Add content to the modal
     conversations_list = get_all_conversations_with_kb_name()
     
-    header_object = {"conversation_id":"Conversation ID","kb_name":"Knowledge Base Name"}
+    header_object = {"conversation_id":"Conversation ID","kb_name":"Knowledge Base Name","pca_done":"PCA Status"}
    # Create a DataFrame from the stored results
-    conversations_list.insert(0,header_object)
-    print(conversations_list)
+    conversations_list.insert(0,header_object)    
     # Display the DataFrame with "Perform PCA" buttons beside each row
     for idx,conversation in enumerate(conversations_list):
-        col1, col2, col3 = st.columns([2, 2, 1])  # Create columns for each row
+        col1, col2, col3, col4 = st.columns([2, 2, 1,1])  # Create columns for each row
         with col1:
             st.write(conversation['conversation_id'])
         with col2:
             st.write(conversation['kb_name'])
         with col3:
             if not idx == 0:
-                if conversation['pca_done'] == 0:                    
-                    if st.button(f"Perform PCA",key=f"Button {conversation['conversation_id']}"):
-                        open_conversation(conversation_id=conversation['conversation_id'])
+                if conversation['pca_done'] == 1:
+                    st.write("✅")
                 else:
-                    if st.button(f"View PCA",key=f"Button {conversation['conversation_id']}"):
-                        open_conversation(conversation_id=conversation['conversation_id'])
+                    st.write("❌")
+            else:
+                st.write(conversation['pca_done'])
+        with col4:
+            if not idx == 0:       
+                if st.button(f"Open Conversation",key=f"Button {conversation['conversation_id']}"):
+                    open_conversation(conversation_id=conversation['conversation_id'])
+          
 
 
 
