@@ -4,6 +4,7 @@ import uuid
 from database import Database
 from processes import *
 import json
+import ast
 import numpy as np
 app = FastAPI(
     title="Chat with Docs",
@@ -62,18 +63,22 @@ def chat_route(conversation_id:str, kb_id:str,model:str,question:str):
 def get_conversation_ids_route():
     try:
         conversation_ids = get_conversation_ids() 
-        return JSONResponse(content={'response':str(conversation_ids)}, status_code=200)
+        return JSONResponse(content={'conversations_ids':conversation_ids}, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
     
-@app.get('/get_conversation')
-def get_conversation_route(conversation_id: str):
+@app.get('/get_full_conversation')
+def get_full_conversation_route(conversation_id: str):
     try:
-        conversation_df = get_conversation_from_id(conversation_id) 
+        conversation_df = get_full_conversation_from_id(conversation_id) 
         # Convert DataFrame to list of dictionaries
         conversations_json = conversation_df.to_dict(orient='records')
+        # Convert NumPy arrays to lists
+        for item in conversations_json:
+            if isinstance(item.get("chunk_id"), np.ndarray):
+                item["chunk_id"] = item["chunk_id"].tolist()
         
-        return JSONResponse(content=str(conversations_json), status_code=200)
+        return JSONResponse(content=conversations_json, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
     
@@ -86,14 +91,18 @@ def pca_route(conversation_id: str):
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
+@app.get('/get_all_conversations')
+def get_all_conversations_route():
+    try:
+        all_conversations_df = get_all_conversations()
+        conversations = all_conversations_df.to_dict(orient='records')
+        return JSONResponse(content=conversations, status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="127.0.0.1", port=8000)
 
-def get_all_conversations():
-    try:
-        conversations = get_conversations()
-        return JSONResponse(content={'response':conversations}, status_code=200)
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=400)
+
 

@@ -23,19 +23,18 @@ class Chunk(LanceModel):
 class Conversation(LanceModel):
     conversation_id: str  # Conversation ID of a particular conversation    
     kb_id: str  # Foreign key to `KnowledgeBase`    
-    chunk_id: List[str]  # List of chunk IDs,
+    pca_done: int = 0
+    
+class Message(LanceModel):
+    conversation_id: str  # Conversation ID of a particular conversation    
     sender: str # User or system
     text: str  # Conversation text
-    pca_done: int = 0
+    chunk_id: List[str]  # List of chunk IDs,
     embedding_tokens: int
     prompt_tokens: int
     completition_tokens: int
     timestamp: str
 
-class Messages(LanceModel):
-    conversation_id: str  # Conversation ID of a particular conversation    
-    sender: str # User or system
-    text: str  # Conversation text
 class PCA(LanceModel):
     conversation_id: str
     sentiment_score: int

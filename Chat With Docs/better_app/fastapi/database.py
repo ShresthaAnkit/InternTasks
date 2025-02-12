@@ -1,4 +1,4 @@
-from models import KnowledgeBase, Chunk, Conversation, PCA
+from models import *
 import lancedb
 import uuid
 import datetime
@@ -16,6 +16,8 @@ class Database():
             self.db.create_table("Conversation", schema=Conversation)
         if "PCA" not in self.db.table_names():
             self.db.create_table("PCA", schema=PCA)
+        if "Message" not in self.db.table_names():
+            self.db.create_table("Message", schema=Message)
 
     def create_kb(self,kb_id,KB_NAME,model,description):
         kb_table = self.db.open_table('KnowledgeBase')
@@ -90,29 +92,31 @@ class Database():
         ).select(["chunk_id","kb_id","text"]).to_pandas()    
         return chunk_df
     
-    def add_to_conversation(self,conversation_id,sender,text,kb_id,chunk_id,embedding_tokens,prompt_tokens,completition_tokens):
-        table = self.db.open_table("Conversation")
+    def add_to_conversation(self,conversation_id,sender,text,kb_id,chunk_id,embedding_tokens,prompt_tokens,completition_tokens):        
+        if not self.check_if_conversation_exists(conversation_id):
+            table = self.db.open_table("Conversation")
+            table.add([
+                Conversation(
+                    conversation_id=conversation_id,
+                    kb_id=kb_id,
+                    pca_done=0
+                )])
+        table = self.db.open_table("Message")
         table.add([
-            Conversation(
-                conversation_id=conversation_id,
-                kb_id=kb_id,
-                chunk_id=chunk_id,
-                sender=sender,
-                text=text,
-                embedding_tokens=embedding_tokens,
-                prompt_tokens=prompt_tokens,
-                completition_tokens=completition_tokens,
-                timestamp=datetime.datetime.now().isoformat()
-            )])
-
-    def delete_conversation(self,conversation_id):
-        table = self.db.open_table("Conversation")
-        table.delete(conversation_id)
+                Message(
+                    conversation_id=conversation_id,                    
+                    sender=sender,
+                    text=text,
+                    chunk_id=chunk_id,
+                    embedding_tokens=embedding_tokens,
+                    prompt_tokens=prompt_tokens,
+                    completition_tokens=completition_tokens,
+                    timestamp=datetime.datetime.now().isoformat()
+                )])
     
-    def get_conversation_ids(self):
+    def get_all_conversations(self):
         table = self.db.open_table("Conversation")        
         return table.to_pandas()
-
     def get_kb_from_id(self,kb_id):
         table = self.db.open_table("KnowledgeBase")
         table.create_fts_index("kb_id", use_tantivy=False,replace=True)
@@ -120,12 +124,21 @@ class Database():
         kb_df.drop(columns=['_score'],inplace=True)         
         return kb_df
 
-    def get_conversation_from_id(self,conversation_id):        
-        table = self.db.open_table("Conversation")
+    # def get_conversation_from_id(self,conversation_id):        
+    #     table = self.db.open_table("Conversation")
+    #     table.create_fts_index("conversation_id", use_tantivy=False,replace=True)
+    #     conversation_df = table.search(conversation_id,vector_column_name='conversation_id').select(["conversation_id","kb_id","pca_done"]).to_pandas()       
+    #     conversation_df.drop(columns=['_score'],inplace=True)         
+    #     return conversation_df
+    
+    def get_full_conversation_from_id(self,conversation_id):        
+        table = self.db.open_table("Message")
         table.create_fts_index("conversation_id", use_tantivy=False,replace=True)
-        conversation_df = table.search(conversation_id,vector_column_name='conversation_id').select(["conversation_id","kb_id","chunk_id","sender","text","embedding_tokens","prompt_tokens","completition_tokens","timestamp"]).to_pandas()       
+        conversation_df = table.search(conversation_id,vector_column_name='conversation_id').select(["conversation_id","sender","text","chunk_id","embedding_tokens","prompt_tokens","completition_tokens","timestamp"]).to_pandas()       
         conversation_df.drop(columns=['_score'],inplace=True)         
         return conversation_df
+
+
     def get_chunks_from_id(self,chunk_ids):        
         table = self.db.open_table("Chunk")
         table.create_fts_index("chunk_id", use_tantivy=False,replace=True)

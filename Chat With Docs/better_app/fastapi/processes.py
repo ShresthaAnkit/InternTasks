@@ -30,19 +30,24 @@ def check_if_kb_already_exist(KB_NAME):
     return db.check_already_exist(KB_NAME)
 
 def get_conversation_ids():
-    return db.get_conversation_ids()['conversation_id'].tolist()  
+    return db.get_all_conversations()['conversation_id'].tolist()  
 
 def check_if_conversation_exists(conversation_id):
     return db.check_if_conversation_exists(conversation_id)
 
-def get_conversation_from_id(conversation_id):
-    return db.get_conversation_from_id(conversation_id)      
+# def get_conversation_from_id(conversation_id):
+#     return db.get_all_conversations(conversation_id)     
+def get_full_conversation_from_id(conversation_id):
+    return db.get_full_conversation_from_id(conversation_id) 
 
+# NEED TO FIX THIS
 def get_conversation_df(conversation_id):
-    conversation_df = db.get_conversation_from_id(conversation_id)
+    conversation_df = db.get_full_conversation_from_id(conversation_id)
     conversation_df['timestamp'] = pd.to_datetime(conversation_df['timestamp'])
     conversation_df = conversation_df.sort_values(by='timestamp',ascending=True)    
     return conversation_df
+def get_all_conversations():
+    return db.get_all_conversations()
 
 def chat_with_kb(conversation_id,kb_id,query,model="gpt-4o-mini"):
     chunk_df = db.retrieve_KB(kb_id)
