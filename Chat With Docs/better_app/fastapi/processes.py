@@ -49,6 +49,13 @@ def get_conversation_df(conversation_id):
 def get_all_conversations():
     return db.get_all_conversations()
 
+def get_all_conversations_with_kb_name():
+    all_conversations_df = db.get_all_conversations()    
+    conversations = all_conversations_df.to_dict(orient='records')
+    for conversation in conversations:
+        conversation['kb_name'] = db.get_kb_name(conversation['kb_id'])
+    return conversations
+
 def chat_with_kb(conversation_id,kb_id,query,model="gpt-4o-mini"):
     chunk_df = db.retrieve_KB(kb_id)
     

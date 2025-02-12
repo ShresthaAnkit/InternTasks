@@ -100,6 +100,14 @@ def get_all_conversations_route():
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
+@app.get('/get_all_conversations_with_kb_name')
+def get_all_conversations_with_kb_name_route():
+    try:
+        conversations = get_all_conversations_with_kb_name()
+        return JSONResponse(content=conversations, status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="127.0.0.1", port=8000)

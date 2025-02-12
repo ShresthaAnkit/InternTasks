@@ -66,6 +66,13 @@ class Database():
             return table.search(KB_NAME,vector_column_name='name').select(["kb_id"]).to_list()[0]['kb_id']    
         except Exception as e:
             return None
+    def get_kb_name(self,kb_id):
+        try:
+            table = self.db.open_table("KnowledgeBase")
+            table.create_fts_index("kb_id", use_tantivy=False,replace=True)
+            return table.search(kb_id,vector_column_name='kb_id').select(["name"]).to_list()[0]['name']    
+        except Exception as e:
+            return None
         
     # Retrieve the knowledge base given the KB_NAME
     def retrieve_KB(self,kb_id):            
