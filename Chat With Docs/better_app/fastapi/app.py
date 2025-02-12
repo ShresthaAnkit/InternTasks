@@ -70,13 +70,14 @@ def get_conversation_ids_route():
 @app.get('/get_full_conversation')
 def get_full_conversation_route(conversation_id: str):
     try:
-        conversation_df = get_full_conversation_from_id(conversation_id) 
+        conversation_df = get_conversation_df(conversation_id) 
+        conversation_df["timestamp"] = conversation_df["timestamp"].astype(str)
         # Convert DataFrame to list of dictionaries
         conversations_json = conversation_df.to_dict(orient='records')
-        # Convert NumPy arrays to lists
+        # Convert NumPy arrays to lists        
         for item in conversations_json:
             if isinstance(item.get("chunk_id"), np.ndarray):
-                item["chunk_id"] = item["chunk_id"].tolist()
+                item["chunk_id"] = item["chunk_id"].tolist()          
         
         return JSONResponse(content=conversations_json, status_code=200)
     except Exception as e:
