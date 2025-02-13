@@ -2,11 +2,20 @@ import pandas as pd
 import json
 from itertools import chain
 from models import *
+from utils import calculate_similarity
 from file_processor import get_file_text, save_uploaded_file_to_disk
 from llm_calls import generate_embeddings, generate_query_embeddings, generate_prompt, generate_response,get_chunks,generate_context,perform_pca_call
 from database import Database
 import uuid
 import datetime
+import yaml
+
+def load_config(file_path=r"Chat With Docs\better_app\fastapi\config.yaml"):
+    with open(file_path, "r") as file:
+        config = yaml.safe_load(file)
+    return config
+
+config = load_config()
 db = Database()
 
 def add_knowledgebase(kb_id,KB_NAME,model,description):
@@ -62,7 +71,7 @@ def get_all_conversations_with_kb_name():
 def chat_with_kb(conversation_id,kb_id,query,model="gpt-4o-mini"):
     chunk_df = db.retrieve_KB(kb_id)
     
-    if chunk_df is None:
+    if chunk_df.empty:
         return 'No Knowledge base found.'
     chunk_df.drop(columns=['_score'],inplace=True)
     history = []
@@ -78,24 +87,31 @@ def chat_with_kb(conversation_id,kb_id,query,model="gpt-4o-mini"):
         conversation_id=conversation_id,
         sender='user',
         text=query,
-        kb_id=chunk_df.iloc[0]['kb_id'],
+        kb_id=kb_id,
         embedding_tokens=embedding_token,
         prompt_tokens=0,
         completion_tokens=0,
         chunk_id=[],
-    )    
-    context = generate_context(embedded_query,chunk_df)
+    )        
+    chunk_df['similarity'] = chunk_df.apply(lambda x: calculate_similarity(embedded_query,x.iloc[3]),axis=1)   
+    print(chunk_df.sort_values('similarity',ascending=False)[['text','similarity']].head(5))         
+    chunk_df = chunk_df[chunk_df['similarity']>config['constants']['similarity_threshold']].sort_values('similarity',ascending=False).head(config['constants']['chunk_count'])            
+    context = generate_context(chunk_df)    
     prompt = generate_prompt(query,context)    
     response = generate_response(prompt,history)          
     response_text = response.choices[0].message.content  
     response_message_id = str(uuid.uuid4())
+    if chunk_df.empty:
+        chunk_id_list = []        
+    else:
+        chunk_id_list = list(chunk_df['chunk_id'])    
     db.add_to_conversation(
         message_id=response_message_id,
         conversation_id=conversation_id,
         sender='system',
         text=response_text,
-        kb_id=chunk_df.iloc[0]['kb_id'],
-        chunk_id=list(chunk_df['chunk_id']),
+        kb_id=kb_id,
+        chunk_id=chunk_id_list,
         embedding_tokens=0,
         prompt_tokens=response.usage.prompt_tokens,
         completion_tokens=response.usage.completion_tokens,        
@@ -105,7 +121,7 @@ def chat_with_kb(conversation_id,kb_id,query,model="gpt-4o-mini"):
         conversation_id=conversation_id,                    
         sender='system',
         text=response_text,        
-        chunk_id=list(chunk_df['chunk_id']),
+        chunk_id=chunk_id_list,
         embedding_tokens=0,
         prompt_tokens=response.usage.prompt_tokens,
         completion_tokens=response.usage.completion_tokens,

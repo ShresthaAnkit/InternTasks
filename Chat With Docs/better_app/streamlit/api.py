@@ -49,6 +49,7 @@ def get_pca(conversation_id):
     return response.json()
 
 def get_chunks_from_ids(chunk_ids):    
-    response = requests.get(f"{URL}/get_chunks_from_ids",params=[("chunk_ids", chunk_id) for chunk_id in chunk_ids])    
+    if len(chunk_ids) == 0: return []
+    response = requests.get(f"{URL}/get_chunks_from_ids",params=[("chunk_ids", chunk_id) for chunk_id in chunk_ids])            
     responseModel = [ChunkModel.from_json(json_object) for json_object in response.json()]
     return responseModel

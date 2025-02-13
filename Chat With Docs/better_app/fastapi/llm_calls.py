@@ -3,7 +3,7 @@ import re
 from dotenv import load_dotenv
 import openai
 load_dotenv()
-from utils import calculate_similarity
+
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from models import PCAModel
 import yaml
@@ -46,14 +46,14 @@ def get_chunks(text,chunk_size=1000):
     chunks = recursive_splitter.split_text(text)
     return chunks
 
-def generate_context(embedded_query,chunk_df):
-    chunk_df['similarity'] = chunk_df.apply(lambda x: calculate_similarity(embedded_query,x.iloc[3]),axis=1)        
-    df_top = chunk_df[chunk_df['similarity']>0.3].sort_values('similarity',ascending=False).head(5)    
+def generate_context(chunk_df):    
     context = ''
-    for txt in df_top['text']:
+    if chunk_df.empty:
+        return ''
+    for txt in chunk_df['text']:
+
         context+=txt
-        context+='\n'
-    
+        context+='\n'    
     return context
 def generate_prompt(query,context):        
     prompt = f"""

@@ -1,9 +1,11 @@
 constants:
-  chunk_size: 1000
+  chunk_size: 2000
+  similarity_threshold: 0.15
+  chunk_count: 5
 
 prompts:
   chat_prompt: |
-    You are a friendly bot. Don\'t ask for extra context.
+    You are a friendly bot who caters to whatever the user asks you to do. Don\'t ask for extra context.
     Answer the question provided after "QUESTION:"
     Using the context provided after "CONTEXT:"
     Only answer the question if the answer is present in the context.

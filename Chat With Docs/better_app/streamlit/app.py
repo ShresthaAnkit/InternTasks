@@ -212,7 +212,7 @@ elif selected == "Query Page":
                     with col1:
                         st.code(f"Completion Tokens: {responseModel.completion_tokens}")
                     with col2:
-                        st.code(f"Prompt Tokens: {responseModel.prompt_tokens}")                    
+                        st.code(f"Prompt Tokens: {responseModel.prompt_tokens}")                         
                     chunks = get_chunks_from_ids(responseModel.chunk_id)                    
                     st.session_state[f"Message{responseModel.message_id}"] = chunks
                     for chunk in chunks:

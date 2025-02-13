@@ -126,10 +126,8 @@ class Database():
     def get_chunks_from_ids(self,chunk_ids):
         table = self.db.open_table("Chunk")
         table.create_fts_index("chunk_id", use_tantivy=False,replace=True)
-        chunks = []
-        print('IDS:',chunk_ids)
-        for chunk_id in chunk_ids:
-            print(chunk_id)
+        chunks = []        
+        for chunk_id in chunk_ids:            
             chunks.extend(table.search(chunk_id,vector_column_name='chunk_id').select(["chunk_id","text","embedding_tokens"]).to_list())      
         df = pd.DataFrame(chunks, columns=["chunk_id", "text", "embedding_tokens"])
         return df
@@ -190,8 +188,7 @@ class Database():
     def get_pca(self,conversation_id):
         table = self.db.open_table("PCA")
         table.create_fts_index("conversation_id", use_tantivy=False,replace=True)
-        pca = table.search(conversation_id,vector_column_name='conversation_id').select(["conversation_id","sentiment_score","sentiment_feedback","context_gap","tags","prompt_tokens","completion_tokens"]).to_list()[0]    
-        print(pca)
+        pca = table.search(conversation_id,vector_column_name='conversation_id').select(["conversation_id","sentiment_score","sentiment_feedback","context_gap","tags","prompt_tokens","completion_tokens"]).to_list()[0]            
         return pca
     def get_all_kbs(self):
         table = self.db.open_table("KnowledgeBase")
