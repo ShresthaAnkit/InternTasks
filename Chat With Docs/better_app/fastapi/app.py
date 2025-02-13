@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile,BackgroundTasks
+from fastapi import FastAPI, File, UploadFile,BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 import uuid
 from database import Database
@@ -53,8 +53,9 @@ def get_new_conversation_id_route():
 @app.get("/chat")
 def chat_route(conversation_id:str, kb_id:str,model:str,question:str):        
     try:                
-        response = chat_with_kb(conversation_id,kb_id,question,model=model)              
-        return JSONResponse(content={"response": response}, status_code=200)
+        response = chat_with_kb(conversation_id,kb_id,question,model=model)             
+        print(response.to_json()) 
+        return JSONResponse(content= response.to_json(), status_code=200)
     
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
@@ -83,12 +84,21 @@ def get_full_conversation_route(conversation_id: str):
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
     
-@app.get('/pca')
+@app.get('/perform_pca')
 def pca_route(conversation_id: str):
     try:
         response_text = perform_pca(conversation_id)
         
-        return JSONResponse(content={'response':json.loads(response_text)}, status_code=200)
+        return JSONResponse(content=json.loads(response_text), status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+    
+@app.get('/get_pca')
+def get_pca_route(conversation_id: str):
+    try:
+        response_text = get_pca(conversation_id)
+        
+        return JSONResponse(content=response_text, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
@@ -106,6 +116,17 @@ def get_all_conversations_with_kb_name_route():
     try:
         conversations = get_all_conversations_with_kb_name()
         return JSONResponse(content=conversations, status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
+@app.get('/get_chunks_from_ids')
+def get_chunks_from_ids_route(chunk_ids: list[str] = Query(...)):
+    print("START: ",chunk_ids)
+    try:
+        chunks_df = get_chunks_from_ids(chunk_ids)
+        print("CHUNKS DF: ",chunks_df)
+        chunks = chunks_df.to_dict(orient='records')
+        return JSONResponse(content=chunks, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 

@@ -6,18 +6,75 @@ from models import *
 import numpy as np
 import pandas as pd
 from api import *
-
+def get_sentiment_color(score):
+    if score >= 8:
+        return "green"
+    elif score >= 4:
+        return "yellow"
+    else:
+        return "red"
 @st.dialog("Conversation",width='large')
 def open_conversation(conversation_id):
-    conversation = get_full_conversation(conversation_id)
+    if f'Conversation:{conversation_id}' in st.session_state:
+        conversation = st.session_state[f'Conversation:{conversation_id}']
+    else:        
+        conversation = get_full_conversation(conversation_id)
+        st.session_state[f'Conversation:{conversation_id}'] = conversation
     st.code(f"Conversation ID: {conversation_id}")
-        # Display chat messages from history on app rerun
-    print(conversation)
-    for message in conversation:
         
-        with st.chat_message(message["sender"]):            
+    for message in conversation:        
+        sender = "user" if message["sender"] == "user" else "assistant"
+        with st.chat_message(sender):            
             st.markdown(message["text"])
     
+@st.dialog("Post Conversation Analysis",width='large')
+def open_pca(conversation_id):
+    if f'Conversation:{conversation_id}' in st.session_state:
+        conversation_list = st.session_state[f'Conversation:{conversation_id}']
+    else:        
+        conversation_list = get_full_conversation(conversation_id)
+        st.session_state[f'Conversation:{conversation_id}'] = conversation_list
+
+    if f'PCA:{conversation_id}' in st.session_state:
+        pca_data = st.session_state[f'PCA:{conversation_id}']
+    else:        
+        pca_data = get_pca(conversation_id)
+        st.session_state[f'PCA:{conversation_id}'] = pca_data
+    total_embedding_tokens = sum([conversation['embedding_tokens'] for conversation in conversation_list])
+    total_prompt_tokens = sum([conversation['prompt_tokens'] for conversation in conversation_list])
+    total_completion_tokens = sum([conversation['completion_tokens'] for conversation in conversation_list])
+    context_gap = '\n - '.join(pca_data['context_gap'])
+    # Display conversation analysis
+    st.code(f"Conversation ID: {conversation_id}")
+
+    st.markdown("### Conversation Tokens")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.code(f"Embedding Tokens: {total_embedding_tokens}")
+    with col2:
+        st.code(f"Prompt Tokens: {total_prompt_tokens}")
+    with col3:
+        st.code(f"Completion Tokens: {total_completion_tokens}")
+
+    st.markdown("### PCA Metrics")
+    col4, col5 = st.columns(2)
+    with col4:
+        st.code(f"PCA Prompt Tokens: {pca_data['prompt_tokens']}")
+    with col5:
+        st.code(f"PCA Completion Tokens: {pca_data['completion_tokens']}")
+    st.markdown(f"""
+    <div style="background-color: {get_sentiment_color(pca_data['sentiment_score'])}; padding: 10px; border-radius: 5px; text-align: center; color: black;">
+        <b>Sentiment Score: {pca_data['sentiment_score']}</b>
+    </div>
+""", unsafe_allow_html=True)
+    st.markdown(f"## Sentiment Feedback: \n {pca_data['sentiment_feedback']}")
+    st.markdown(f"## Context Gap: \n - {context_gap}")
+
+    st.markdown("### Tags: ")
+    st.write(", ".join(pca_data["tags"]))
+    
+
 if 'embedding_model' not in st.session_state:
     st.session_state['embedding_model'] = ''
 if 'completion_model' not in st.session_state:
@@ -33,6 +90,8 @@ if 'conversation_id' not in st.session_state:
 # Initialize chat history
 if "chat_messages" not in st.session_state:
     st.session_state['chat_messages'] = []
+if "pca_loading" not in st.session_state:
+    st.session_state['pca_loading'] = 0
 
 # Define navigation
 st.set_page_config(page_title="My Streamlit App", layout="wide")
@@ -78,7 +137,7 @@ elif selected == "Query Page":
         else:
             st.session_state['embedding_model'] = ''
         #st.subheader("Model Selection")
-        model = st.selectbox("Select Completition Model", ["gpt-4o-mini"])
+        model = st.selectbox("Select completion Model", ["gpt-4o-mini"])
         st.text("Embedding Model:")
         st.code(f"{st.session_state['embedding_model']}")
         create_chat = st.button("Create Chat")        
@@ -111,8 +170,23 @@ elif selected == "Query Page":
 
     # Display chat messages from history on app rerun
     for message in st.session_state.chat_messages:
-        with st.chat_message(message["role"]):            
-            st.markdown(message["content"])
+        with st.chat_message(message["role"]):                     
+            st.markdown(message["content"].text) 
+            if message["role"] == "assistant":
+                responseModel = message['content']
+                chunks = st.session_state[f"Message{responseModel.message_id}"]
+                with st.expander("Response Details"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.code(f"Completion Tokens: {responseModel.completion_tokens}")
+                    with col2:
+                        st.code(f"Prompt Tokens: {responseModel.prompt_tokens}")                                                            
+                    for chunk in chunks:                        
+                        col1, col2 = st.columns([5,2])
+                        with col1:
+                            st.code(chunk.text)
+                        with col2:
+                            st.code(f"Embedding Tokens:\n{chunk.embedding_tokens}")
 
     # Accept user input
     if prompt := st.chat_input("Type your query..."):
@@ -120,30 +194,50 @@ elif selected == "Query Page":
             with st.chat_message("assistant"):
                 st.markdown("Please create a chat first.")
         else:
-            # Add user message to chat history
-            st.session_state['chat_messages'].append({"role": "user", "content": prompt})
             # Display user message in chat message container
+            queryModel = QueryModel(conversation_id=st.session_state['conversation_id'], kb_id=kbs[kb_list.index(selected_kb)-1].kb_id, text=prompt, model=st.session_state['completion_model'])            
+            # Add user message to chat history
+            st.session_state['chat_messages'].append({"role": "user", "content": queryModel})
             with st.chat_message("user"):
-                st.markdown(prompt)
+                st.markdown(queryModel.text)
 
-            queryModel = QueryModel(conversation_id=st.session_state['conversation_id'], kb_id=kbs[kb_list.index(selected_kb)-1].kb_id, question=prompt, model=st.session_state['completion_model'])            
-            response = chat(queryModel)
+            responseModel: ChatResponseModel = chat(queryModel)
+            
 
             # Display assistant response in chat message container
             with st.chat_message("assistant"):
-                st.markdown(response)
+                st.markdown(responseModel.text)
+                with st.expander("Response Details"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.code(f"Completion Tokens: {responseModel.completion_tokens}")
+                    with col2:
+                        st.code(f"Prompt Tokens: {responseModel.prompt_tokens}")
+                    print("CHUNK IDS: ",responseModel.chunk_id)
+                    chunks = get_chunks_from_ids(responseModel.chunk_id)
+                    print("CHUNKS: ",chunks)
+                    st.session_state[f"Message{responseModel.message_id}"] = chunks
+                    for chunk in chunks:
+                        col1, col2 = st.columns([5,2])
+                        with col1:
+                            st.code(chunk.text)
+                        with col2:
+                            st.code(f"Embedding Tokens:\n{chunk.embedding_tokens}")
+
                 # Add assistant response to chat history
-                st.session_state['chat_messages'].append({"role": "assistant", "content": response})                
+                st.session_state['chat_messages'].append({"role": "assistant", "content": responseModel})                
 
 
 elif selected == "PCA Page":
     st.title("PCA Analysis")
     # Add content to the modal
-    conversations_list = get_all_conversations_with_kb_name()
-    
-    header_object = {"conversation_id":"Conversation ID","kb_name":"Knowledge Base Name","pca_done":"PCA Status"}
-   # Create a DataFrame from the stored results
+    conversations_list = get_all_conversations_with_kb_name()        
+    header_object = {"conversation_id":"Conversation ID","kb_name":"Knowledge Base","pca_done":"PCA Status"}
+    # Create a DataFrame from the stored results
     conversations_list.insert(0,header_object)    
+    st.session_state['conversation_list_with_kb_name'] = conversations_list
+    
+    
     # Display the DataFrame with "Perform PCA" buttons beside each row
     for idx,conversation in enumerate(conversations_list):
         col1, col2, col3, col4 = st.columns([2, 2, 1,1])  # Create columns for each row
@@ -154,14 +248,20 @@ elif selected == "PCA Page":
         with col3:
             if not idx == 0:
                 if conversation['pca_done'] == 1:
-                    st.write("✅")
+                    if st.button(f"View PCA",key=f"PCAButton {conversation['conversation_id']}"):
+                        open_pca(conversation_id=conversation['conversation_id'])
                 else:
-                    st.write("❌")
+                    if st.button(f"Perform PCA",key=f"PCAButton {conversation['conversation_id']}"):
+                        with st.spinner():
+                            perform_pca(conversation_id=conversation['conversation_id'])
+                            conversation['pca_done'] = 1
+                            st.session_state['conversation_list_with_kb_name'] = conversations_list
+                        st.rerun()
             else:
                 st.write(conversation['pca_done'])
         with col4:
             if not idx == 0:       
-                if st.button(f"Open Conversation",key=f"Button {conversation['conversation_id']}"):
+                if st.button(f"Open Conversation",key=f"ConversationButton {conversation['conversation_id']}"):
                     open_conversation(conversation_id=conversation['conversation_id'])
           
 

@@ -29,7 +29,8 @@ def get_conversation_id():
 
 def chat(queryModel: QueryModel):        
     response = requests.get(f"{URL}/chat",params=queryModel.to_json())
-    return response.json()['response']
+    responseModel = ChatResponseModel.from_json(response.json())
+    return responseModel
 
 def get_all_conversations_with_kb_name():
     response = requests.get(f"{URL}/get_all_conversations_with_kb_name")
@@ -38,3 +39,18 @@ def get_all_conversations_with_kb_name():
 def get_full_conversation(conversation_id):
     response = requests.get(f"{URL}/get_full_conversation",params={"conversation_id": conversation_id})
     return response.json()
+
+def perform_pca(conversation_id):
+    response = requests.get(f"{URL}/perform_pca",params={"conversation_id": conversation_id})
+    return response.json()
+
+def get_pca(conversation_id):
+    response = requests.get(f"{URL}/get_pca",params={"conversation_id": conversation_id})
+    return response.json()
+
+def get_chunks_from_ids(chunk_ids):
+    print("API: ",chunk_ids)
+    response = requests.get(f"{URL}/get_chunks_from_ids",params=[("chunk_ids", chunk_id) for chunk_id in chunk_ids])
+    print(response.json())
+    responseModel = [ChunkModel.from_json(json_object) for json_object in response.json()]
+    return responseModel

@@ -26,14 +26,28 @@ class Conversation(LanceModel):
     pca_done: int = 0
     
 class Message(LanceModel):
+    message_id: str
     conversation_id: str  # Conversation ID of a particular conversation    
     sender: str # User or system
     text: str  # Conversation text
     chunk_id: List[str]  # List of chunk IDs,
     embedding_tokens: int
     prompt_tokens: int
-    completition_tokens: int
+    completion_tokens: int
     timestamp: str
+
+    def to_json(self):
+        return {
+            "message_id": self.message_id,
+            "conversation_id": self.conversation_id,
+            "sender": self.sender,
+            "text": self.text,
+            "chunk_id": self.chunk_id,
+            "embedding_tokens": self.embedding_tokens,
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "timestamp": self.timestamp
+        }
 
 class PCA(LanceModel):
     conversation_id: str
@@ -42,7 +56,7 @@ class PCA(LanceModel):
     context_gap: List[str]
     tags: List[str]
     prompt_tokens: int
-    completition_tokens: int
+    completion_tokens: int
 
 class PCAModel(BaseModel):    
     sentiment_score: int

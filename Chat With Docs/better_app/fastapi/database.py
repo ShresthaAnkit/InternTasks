@@ -2,6 +2,7 @@ from models import *
 import lancedb
 import uuid
 import datetime
+import pandas as pd
 
 
 class Database():
@@ -99,7 +100,7 @@ class Database():
         ).select(["chunk_id","kb_id","text"]).to_pandas()    
         return chunk_df
     
-    def add_to_conversation(self,conversation_id,sender,text,kb_id,chunk_id,embedding_tokens,prompt_tokens,completition_tokens):        
+    def add_to_conversation(self,message_id,conversation_id,sender,text,kb_id,chunk_id,embedding_tokens,prompt_tokens,completion_tokens):        
         if not self.check_if_conversation_exists(conversation_id):
             table = self.db.open_table("Conversation")
             table.add([
@@ -109,18 +110,30 @@ class Database():
                     pca_done=0
                 )])
         table = self.db.open_table("Message")
+        
         table.add([
                 Message(
+                    message_id=message_id,
                     conversation_id=conversation_id,                    
                     sender=sender,
                     text=text,
                     chunk_id=chunk_id,
                     embedding_tokens=embedding_tokens,
                     prompt_tokens=prompt_tokens,
-                    completition_tokens=completition_tokens,
+                    completion_tokens=completion_tokens,
                     timestamp=datetime.datetime.now().isoformat()
                 )])
-    
+    def get_chunks_from_ids(self,chunk_ids):
+        table = self.db.open_table("Chunk")
+        table.create_fts_index("chunk_id", use_tantivy=False,replace=True)
+        chunks = []
+        print('IDS:',chunk_ids)
+        for chunk_id in chunk_ids:
+            print(chunk_id)
+            chunks.extend(table.search(chunk_id,vector_column_name='chunk_id').select(["chunk_id","text","embedding_tokens"]).to_list())      
+        df = pd.DataFrame(chunks, columns=["chunk_id", "text", "embedding_tokens"])
+        return df
+
     def get_all_conversations(self):
         table = self.db.open_table("Conversation")        
         return table.to_pandas()
@@ -141,12 +154,12 @@ class Database():
     def get_full_conversation_from_id(self,conversation_id):        
         table = self.db.open_table("Message")
         table.create_fts_index("conversation_id", use_tantivy=False,replace=True)
-        conversation_df = table.search(conversation_id,vector_column_name='conversation_id').select(["conversation_id","sender","text","chunk_id","embedding_tokens","prompt_tokens","completition_tokens","timestamp"]).to_pandas()       
+        conversation_df = table.search(conversation_id,vector_column_name='conversation_id').select(["conversation_id","sender","text","chunk_id","embedding_tokens","prompt_tokens","completion_tokens","timestamp"]).to_pandas()       
         conversation_df.drop(columns=['_score'],inplace=True)         
         return conversation_df
 
 
-    def get_chunks_from_id(self,chunk_ids):        
+    def get_chunk_text_from_ids(self,chunk_ids):        
         table = self.db.open_table("Chunk")
         table.create_fts_index("chunk_id", use_tantivy=False,replace=True)
         chunks_text = []
@@ -157,7 +170,7 @@ class Database():
         table = self.db.open_table("PCA")
         table.delete(f"conversation_id = '{conversation_id}'")
 
-    def insert_pca(self,conversation_id,pca_response,prompt_tokens,completition_tokens):
+    def insert_pca(self,conversation_id,pca_response,prompt_tokens,completion_tokens):
         table = self.db.open_table("PCA")
         table.create_fts_index("conversation_id", use_tantivy=False,replace=True)
         existing_pca = table.search(conversation_id,vector_column_name='conversation_id').select(["conversation_id"]).to_list()       
@@ -169,11 +182,17 @@ class Database():
                        context_gap=pca_response['context_gap'],
                        tags=pca_response['tags'],
                        prompt_tokens=prompt_tokens,
-                       completition_tokens=completition_tokens)])
+                       completion_tokens=completion_tokens)])
         c_table = self.db.open_table('Conversation')
         c_table.create_fts_index("conversation_id", use_tantivy=False,replace=True)  
         c_table.update(where=f"conversation_id = '{conversation_id}'",values={'pca_done': 1})         
-        
+
+    def get_pca(self,conversation_id):
+        table = self.db.open_table("PCA")
+        table.create_fts_index("conversation_id", use_tantivy=False,replace=True)
+        pca = table.search(conversation_id,vector_column_name='conversation_id').select(["conversation_id","sentiment_score","sentiment_feedback","context_gap","tags","prompt_tokens","completion_tokens"]).to_list()[0]    
+        print(pca)
+        return pca
     def get_all_kbs(self):
         table = self.db.open_table("KnowledgeBase")
         return table.to_pandas()

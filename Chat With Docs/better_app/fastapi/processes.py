@@ -1,9 +1,12 @@
 import pandas as pd
 import json
 from itertools import chain
+from models import *
 from file_processor import get_file_text, save_uploaded_file_to_disk
 from llm_calls import generate_embeddings, generate_query_embeddings, generate_prompt, generate_response,get_chunks,generate_context,perform_pca_call
 from database import Database
+import uuid
+import datetime
 db = Database()
 
 def add_knowledgebase(kb_id,KB_NAME,model,description):
@@ -65,26 +68,29 @@ def chat_with_kb(conversation_id,kb_id,query,model="gpt-4o-mini"):
     history = []
     if check_if_conversation_exists(conversation_id):        
         history = get_conversation_df(conversation_id)['text'].tail(4).tolist()
-        
-    
+            
     query_response = generate_query_embeddings(query) 
     embedded_query = query_response.data[0].embedding    
     embedding_token = query_response.usage.total_tokens
+    user_message_id = str(uuid.uuid4())
     db.add_to_conversation(
+        message_id=user_message_id,
         conversation_id=conversation_id,
         sender='user',
         text=query,
         kb_id=chunk_df.iloc[0]['kb_id'],
         embedding_tokens=embedding_token,
         prompt_tokens=0,
-        completition_tokens=0,
+        completion_tokens=0,
         chunk_id=[],
     )    
     context = generate_context(embedded_query,chunk_df)
     prompt = generate_prompt(query,context)    
     response = generate_response(prompt,history)          
     response_text = response.choices[0].message.content  
+    response_message_id = str(uuid.uuid4())
     db.add_to_conversation(
+        message_id=response_message_id,
         conversation_id=conversation_id,
         sender='system',
         text=response_text,
@@ -92,9 +98,20 @@ def chat_with_kb(conversation_id,kb_id,query,model="gpt-4o-mini"):
         chunk_id=list(chunk_df['chunk_id']),
         embedding_tokens=0,
         prompt_tokens=response.usage.prompt_tokens,
-        completition_tokens=response.usage.completion_tokens,        
+        completion_tokens=response.usage.completion_tokens,        
     )    
-    return response_text
+    response_message = Message(
+        message_id=response_message_id,
+        conversation_id=conversation_id,                    
+        sender='system',
+        text=response_text,        
+        chunk_id=list(chunk_df['chunk_id']),
+        embedding_tokens=0,
+        prompt_tokens=response.usage.prompt_tokens,
+        completion_tokens=response.usage.completion_tokens,
+        timestamp=datetime.datetime.now().isoformat()
+    )
+    return response_message
 
 def perform_pca(conversation_id):
     conversation_df = get_conversation_df(conversation_id)
@@ -104,16 +121,22 @@ def perform_pca(conversation_id):
     chunk_id_list = list(conversation_df['chunk_id'])
     unique_chunk_ids = list(set(list(chain(*chunk_id_list))))
     print("Getting chunks")
-    chunks = db.get_chunks_from_id(unique_chunk_ids)
+    chunks = db.get_chunk_text_from_ids(unique_chunk_ids)
     print("Performing pca call")
     response = perform_pca_call(history,chunks)
     response_text = response.choices[0].message.content  
     prompt_tokens = response.usage.prompt_tokens
-    completition_tokens = response.usage.completion_tokens
+    completion_tokens = response.usage.completion_tokens
     print("Inserting to db")
-    db.insert_pca(conversation_id,json.loads(response_text),prompt_tokens,completition_tokens)
+    db.insert_pca(conversation_id,json.loads(response_text),prompt_tokens,completion_tokens)
     print("Inserted")
     return response_text
 
+def get_pca(conversation_id):
+    return db.get_pca(conversation_id)
+
 def get_all_kbs():
     return db.get_all_kbs()
+
+def get_chunks_from_ids(chunk_ids):
+    return db.get_chunks_from_ids(chunk_ids)
