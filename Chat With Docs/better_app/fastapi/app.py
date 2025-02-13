@@ -53,8 +53,7 @@ def get_new_conversation_id_route():
 @app.get("/chat")
 def chat_route(conversation_id:str, kb_id:str,model:str,question:str):        
     try:                
-        response = chat_with_kb(conversation_id,kb_id,question,model=model)             
-        print(response.to_json()) 
+        response = chat_with_kb(conversation_id,kb_id,question,model=model)                     
         return JSONResponse(content= response.to_json(), status_code=200)
     
     except Exception as e:
@@ -120,11 +119,9 @@ def get_all_conversations_with_kb_name_route():
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
 @app.get('/get_chunks_from_ids')
-def get_chunks_from_ids_route(chunk_ids: list[str] = Query(...)):
-    print("START: ",chunk_ids)
+def get_chunks_from_ids_route(chunk_ids: list[str] = Query(...)):    
     try:
-        chunks_df = get_chunks_from_ids(chunk_ids)
-        print("CHUNKS DF: ",chunks_df)
+        chunks_df = get_chunks_from_ids(chunk_ids)        
         chunks = chunks_df.to_dict(orient='records')
         return JSONResponse(content=chunks, status_code=200)
     except Exception as e:

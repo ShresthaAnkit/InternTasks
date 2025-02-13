@@ -48,9 +48,7 @@ def get_pca(conversation_id):
     response = requests.get(f"{URL}/get_pca",params={"conversation_id": conversation_id})
     return response.json()
 
-def get_chunks_from_ids(chunk_ids):
-    print("API: ",chunk_ids)
-    response = requests.get(f"{URL}/get_chunks_from_ids",params=[("chunk_ids", chunk_id) for chunk_id in chunk_ids])
-    print(response.json())
+def get_chunks_from_ids(chunk_ids):    
+    response = requests.get(f"{URL}/get_chunks_from_ids",params=[("chunk_ids", chunk_id) for chunk_id in chunk_ids])    
     responseModel = [ChunkModel.from_json(json_object) for json_object in response.json()]
     return responseModel
