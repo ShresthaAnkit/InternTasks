@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Hands Detection</title>
+    <link rel="icon" href="data:,">
+</head>
+<body>
+    <h2>Live Hand Detection</h2>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    <p id="faceCount">Total Hands Detected: 0</p>
+    <p id="fps">FPS: 0</p>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>    
+    <script>
+        let detector;
+        let video;
+        let canvas;
+        let ctx;
+        let startTime;
+        let frameCount = 0;
+        let fpsDisplay = document.getElementById('fps');
+        let totalFaces = 0; // Keep track of total faces detected
+        let processedFrames = 0;
+        const maxFramesToProcess = 500; // Adjust as needed
+
+        async function startFaceDetection() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert("Error: Camera access is not supported in this browser.");
+                return;
+            }
+
+            try {
+                const model = handPoseDetection.SupportedModels.MediaPipeHands;
+                const detectorConfig = {
+                runtime: 'tfjs'                
+                }
+                const detector = await handPoseDetection.createDetector(model, detectorConfig);
+
+                
+                
+                video = document.getElementById("video");
+                canvas = document.getElementById("canvas");
+                ctx = canvas.getContext("2d");                
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                const mainCamera = videoDevices.find(device => !device.label.includes('Iriun')) || videoDevices[0];
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {deviceId: mainCamera.deviceId} });
+                // const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                
+                video.addEventListener('loadedmetadata', () => {                    
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    startTime = performance.now();                    
+                    detectHands();
+                });
+
+            } catch (error) {
+                console.error("Face Detection Error:", error);
+                alert("Error: Unable to start face detection.");
+            }
+        }
+
+        async function detectHands() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            console.log("DETECTING HANDS")
+            const hands = await detector.estimateHands(video);
+            console.log("HANDS")
+            console.log(hands)
+            //console.log(faces)
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            //console.log(faces)
+            
+            // faces.forEach(face => {                
+            //     const { xMin, yMin, width, height } = face.box;
+            //     ctx.strokeRect(xMin, yMin, width, height);
+            // });
+            
+            // Update total face count
+            // totalFaces += faces.length;            
+            document.getElementById("faceCount").innerText = `Total Hands Detected: ${hands.length}`;
+            // document.getElementById("faceCount").innerText = `Total Faces Detected: ${totalFaces}`;
+
+            frameCount++;
+            const currentTime = performance.now();
+            const elapsedTime = currentTime - startTime;
+            const currentFps = frameCount / (elapsedTime / 1000);
+            fpsDisplay.textContent = `FPS: ${currentFps.toFixed(2)}`;
+
+            requestAnimationFrame(detectFaces);
+        }
+
+        startFaceDetection();
+    </script>
+</body>
+</html>
